@@ -1,0 +1,32 @@
+services:
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: can-server-fixed
+    environment:
+      - CAN_INTERFACE=vcan0
+      - FASTAPI_HOST=0.0.0.0
+      - FASTAPI_PORT=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../server/app.py:/app/app.py:ro
+
+  panel:
+    build:
+      context: ../panel
+      dockerfile: Dockerfile
+    container_name: can-panel-fixed
+    depends_on:
+      - server
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=development
+    volumes:
+      - ../panel/src:/app/src:ro
+      - ../panel/public:/app/public:ro
+    command: ["npm", "run", "dev"]
+

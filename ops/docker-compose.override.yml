@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  panel:
+    build:
+      context: ../panel
+      dockerfile: Dockerfile
+    volumes:
+      - ../panel/src:/app/src:ro
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=development
+    command: ["npm", "run", "dev"]
+    
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    volumes:
+      - ../server/app.py:/app/app.py:ro
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+

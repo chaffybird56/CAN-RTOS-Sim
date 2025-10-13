@@ -1,0 +1,45 @@
+services:
+  node_a:
+    build:
+      context: ../node_a
+      dockerfile: Dockerfile
+    container_name: can-node-a
+    environment:
+      - NODE_ID=A
+      - SENSOR_RATE=100
+      - CAN_INTERFACE=vcan0
+
+  node_b:
+    build:
+      context: ../node_b
+      dockerfile: Dockerfile
+    container_name: can-node-b
+    environment:
+      - NODE_ID=B
+      - WATCHDOG_TIMEOUT=2000
+      - CAN_INTERFACE=vcan0
+
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: can-server
+    environment:
+      - CAN_INTERFACE=vcan0
+      - FASTAPI_HOST=0.0.0.0
+      - FASTAPI_PORT=8000
+    ports:
+      - "8000:8000"
+
+  panel:
+    build:
+      context: ../panel
+      dockerfile: Dockerfile
+    container_name: can-panel
+    depends_on:
+      - server
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=development
