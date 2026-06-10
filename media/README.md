@@ -7,17 +7,16 @@ This directory contains media assets for the CAN-RTOS-Sim project.
 - `hero.gif` - Main demonstration video (30-60 seconds)
 - `screenshots/` - Dashboard screenshots for documentation
 
-## Screenshots to Capture
+## Screenshots (in repo)
 
-For the README and documentation, capture these screenshots:
+Captured for the README under `screenshots/`:
 
-1. **Dashboard Overview** - Full dashboard showing all panels
-2. **Bus Monitor** - Active frame monitoring with various frame types
-3. **Node Health** - Nodes in NORMAL state with green indicators
-4. **Fault Injection** - Panel showing available fault types
-5. **Charts** - Real-time metrics and frame rate visualization
-6. **Degraded State** - Node B in DEGRADED state after fault injection
-7. **Recovery** - Node B returning to NORMAL state
+| File | Shows |
+|------|--------|
+| `dashboard-overview.png` | Full HIL dashboard — nodes, fault panel, charts, bus monitor |
+| `fault-injection-active.png` | After **Drop Sensor** — watchdog timeouts and recovery count |
+| `bus-monitor.png` | Live CAN table with sensor/command frames and filters |
+| `flood-bus-charts.png` | **Flood Bus** fault — frame-rate spike and bus load |
 
 ## Demo Video Script
 

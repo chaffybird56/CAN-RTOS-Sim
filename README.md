@@ -1,73 +1,99 @@
 # CAN-RTOS-Sim
 
-Two "RTOS-like" embedded nodes communicating over a simulated CAN bus with live fault-injection and a web HIL panel.
+[![CI](https://img.shields.io/github/actions/workflow/status/chaffybird56/CAN-RTOS-Sim/ci.yml?label=CI&logo=github)](https://github.com/chaffybird56/CAN-RTOS-Sim/actions/workflows/ci.yml)
 
-## Why It Matters
+**What you get:** A browser dashboard that watches two embedded-style CAN nodes talk over a virtual bus — live frame traffic, node health, charts, and buttons to break things on purpose (drop frames, delay, flood, reset) so you can see watchdogs and recovery in action.
+
+> Two RTOS-like C++ nodes (sensor + controller), a FastAPI backend, and a Next.js HIL panel — no physical CAN hardware required (Docker + simulated bus).
+
+<p align="center">
+  <img src="media/screenshots/dashboard-overview.png" width="900" alt="CAN-RTOS-Sim dashboard — node health, fault injection, and live charts" />
+  <br/>
+  <sub>Live HIL dashboard: node health, fault-injection controls, frame-rate charts, and bus monitor.</sub>
+</p>
+
+| Normal operation | Fault injection |
+|---|---|
+| Sensor and controller nodes report <strong>Normal</strong> while frames flow at ~100+ Hz. | Click <strong>Drop Sensor</strong> or <strong>Flood Bus</strong> to stress the network and watch counters move. |
+| ![Dashboard overview](media/screenshots/dashboard-overview.png) | ![Fault injection active](media/screenshots/fault-injection-active.png) |
+
+## At a glance
+
+| | |
+|---|---|
+| **Problem** | Automotive ECUs share a CAN bus; failures (dropped frames, floods, resets) must be detected and recovered. |
+| **Approach** | Sensor node TX + controller watchdog/state machine, with a web panel for monitoring and scripted fault injection. |
+| **Dashboard** | Node health, real-time charts, hex bus monitor, one-click fault scenarios. |
+| **Stack** | C++ nodes · FastAPI + WebSocket · Next.js · Docker Compose |
+
+## Screenshots
+
+### Bus monitor — live CAN frames
+
+Every frame shows timestamp, ID, DLC, hex payload, and type (sensor / command / sequence). Filter by ID range or toggle hex vs decimal.
+
+<p align="center">
+  <img src="media/screenshots/bus-monitor.png" width="900" alt="Bus monitor table with sensor and command frames" />
+</p>
+
+### Fault injection — flood the bus
+
+Inject high-rate traffic and watch frame-rate charts spike while the monitor fills with mixed frame types.
+
+<p align="center">
+  <img src="media/screenshots/flood-bus-charts.png" width="900" alt="System charts during bus flood fault injection" />
+</p>
+
+## Why it matters
 
 This project simulates real-world embedded automotive systems where multiple ECUs communicate over CAN buses. It demonstrates:
-- **Fault tolerance**: How systems handle communication failures
-- **Watchdog mechanisms**: Automatic recovery from degraded states  
-- **Live monitoring**: Real-time visibility into bus traffic and node health
-- **Fault injection**: Controlled testing of system resilience
+
+- **Fault tolerance** — how systems handle communication failures  
+- **Watchdog mechanisms** — automatic recovery from degraded states  
+- **Live monitoring** — real-time visibility into bus traffic and node health  
+- **Fault injection** — controlled testing of system resilience  
 
 ## Features
 
-- **Virtual CAN Bus**: SocketCAN vcan0 interface running in Docker (no physical hardware needed)
-- **Two Simulated Nodes**: 
-  - Sensor node (periodic data transmission)
-  - Controller node (watchdog + state machine)
-- **Fault Injection**: Drop, delay, flood, and reset capabilities
-- **Live Dashboard**: Real-time frame monitoring, node health, and charts
-- **Cross-Platform**: Works on M3 Macs via Docker's Linux VM
+- **Virtual CAN bus** — no physical hardware needed (Docker)  
+- **Two simulated nodes** — sensor (periodic TX) and controller (watchdog + state machine)  
+- **Fault injection** — drop, delay, flood, and reset  
+- **Live dashboard** — frame monitor, node health, charts  
+- **Cross-platform** — runs on Mac via Docker's Linux VM  
 
 ## Stack
 
-- **CAN Interface**: SocketCAN, python-can
-- **Backend**: FastAPI, WebSocket streaming
-- **Frontend**: Next.js, real-time charts
-- **Orchestration**: Docker Compose
-- **Language**: C++ (nodes), Python (server), TypeScript (panel)
+- **Nodes:** C++17 cooperative loops, SocketCAN-oriented design  
+- **Backend:** FastAPI, WebSocket streaming  
+- **Frontend:** Next.js, Tailwind, Recharts  
+- **Orchestration:** Docker Compose  
 
 ## Quickstart
 
-### Option 1: One-Command Setup (Recommended)
+### One command (recommended)
 
 ```bash
 ./quickstart.sh
 ```
 
-This script will:
-- Check prerequisites (Docker)
-- Build all images
-- Start all services
-- Verify system health
-- Open the dashboard
+Builds images, starts services, checks health, opens http://localhost:3000.
 
-### Option 2: Manual Setup
+### Manual
 
 ```bash
-# 1. Build all images
 docker compose -f ops/compose.yml build
-
-# 2. Start the virtual CAN bus
-docker compose -f ops/compose.yml up -d bus
-
-# 3. Start nodes, server, and dashboard
-docker compose -f ops/compose.yml up -d node_a node_b server panel
-
-# 4. Open dashboard
+docker compose -f ops/compose.yml up -d
 open http://localhost:3000
 ```
 
-### Option 3: Using Make Commands
+### Make shortcuts
 
 ```bash
-make build
-make up
-make dashboard
+make -C ops build
+make -C ops up
 ```
 
-## How It Works
+## How it works
 
 ```
 ┌─────────────┐    vcan0     ┌─────────────┐
@@ -79,93 +105,83 @@ make dashboard
                      ▼       ▼
               ┌─────────────────────┐
               │    FastAPI Server   │
-              │  (CAN Monitor +     │
-              │   Fault Injection)  │
+              │  (CAN monitor +     │
+              │   fault injection)  │
               └─────────────────────┘
                        │
                        ▼
               ┌─────────────────────┐
-              │   Next.js Dashboard │
-              │   (Live Monitoring) │
+              │   Next.js Dashboard   │
               └─────────────────────┘
 ```
 
-## Fault Injection Scenarios
+## Fault injection scenarios
 
-| Fault Type | Expected Behavior | Observable Result |
-|------------|------------------|-------------------|
-| **Drop Sensor** | Node B watchdog expires → DEGRADED state | Controller enters degraded mode, logs recovery |
-| **Delay Frames** | Increased latency → late frame counters | Timestamp spread in bus monitor |
-| **Flood Bus** | Error counters rise, potential throttling | High frame rate, possible missed frames |
-| **Reset Node A** | Node A restarts, temporary frame loss | Controller detects restart, logs state changes |
+| Fault | What it does | What to watch |
+|-------|----------------|---------------|
+| **Drop Sensor** | Suppress sensor frames (0x100–0x10F) | Controller watchdog, degraded state |
+| **Delay Frames** | Add latency | Timestamp spread in bus monitor |
+| **Flood Bus** | High frame-rate traffic | Charts spike, mixed frame types |
+| **Reset Node A** | Restart sensor path | Brief gap then recovery |
 
-## Metrics
+## Demo script
 
-- **Message Rate**: Frames per second (moving average)
-- **Error Frames**: Dropped/corrupted frame count
-- **Watchdog Events**: State transitions and recovery time
-- **Bus Load**: Percentage utilization
+The dashboard includes a built-in **Quick Demo Script** (Fault Injection panel). For a guided recording:
+
+```bash
+./scripts/demo_recording.sh
+```
 
 ## Troubleshooting
 
-### Common Issues
-
 **Docker not running**
+
 ```bash
-# Start Docker Desktop and wait for it to be ready
 docker info
 ```
 
-**Services not starting**
-```bash
-# Check service status
-docker compose -f ops/compose.yml ps
+**Services not up**
 
-# View logs
+```bash
+docker compose -f ops/compose.yml ps
 docker compose -f ops/compose.yml logs
 ```
 
-**No CAN traffic**
+**Dashboard empty**
+
 ```bash
-# Check if vcan0 exists
-docker compose -f ops/compose.yml exec bus ip link show vcan0
-
-# Monitor CAN traffic
-docker compose -f ops/compose.yml exec bus candump -l vcan0
-```
-
-**Dashboard not accessible**
-```bash
-# Check if panel is running
-curl http://localhost:3000
-
-# Check server API
 curl http://localhost:8000/health
+curl http://localhost:8000/frames?limit=5
 ```
 
-### Validation Script
-
-Run the built-in validation script to check system health:
+**Validation**
 
 ```bash
 ./scripts/validate_can.sh
-```
-
-### System Test
-
-Run the integration test to verify everything works:
-
-```bash
 python3 test_system.py
 ```
 
-## Potential Additions
+## Repository layout
 
-- [ ] Renode/Zephyr integration for more realistic RTOS simulation
-- [ ] SQLite logging for historical analysis
-- [ ] Prometheus metrics + Grafana dashboards
-- [ ] Multi-bus topologies (CAN-FD, LIN)
+```
+CAN-RTOS-Sim/
+├─ node_a/              # Sensor ECU (C++)
+├─ node_b/              # Controller ECU (C++)
+├─ server/              # FastAPI backend
+├─ panel/               # Next.js dashboard
+├─ bus/                 # vcan0 setup container
+├─ ops/compose.yml      # Docker orchestration
+├─ media/screenshots/   # README visuals
+└─ scripts/             # validate, demo recording
+```
+
+## Roadmap
+
+- [ ] Renode/Zephyr integration for more realistic RTOS simulation  
+- [ ] SQLite logging for historical analysis  
+- [ ] Prometheus + Grafana dashboards  
+- [ ] Multi-bus topologies (CAN-FD, LIN)  
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).

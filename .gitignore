@@ -53,8 +53,6 @@ tmp/
 temp/
 *.tmp
 
-# Media (keep structure but ignore large files)
+# Media (ignore large demo video; README screenshots are tracked)
 media/hero.gif
-media/screenshots/*.png
-media/screenshots/*.jpg
 
