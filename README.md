@@ -10,8 +10,6 @@ This project simulates real-world embedded automotive systems where multiple ECU
 - **Live monitoring**: Real-time visibility into bus traffic and node health
 - **Fault injection**: Controlled testing of system resilience
 
-Perfect for understanding systems used by Tesla, Rivian, NXP, and Applied Intuition.
-
 ## Features
 
 - **Virtual CAN Bus**: SocketCAN vcan0 interface running in Docker (no physical hardware needed)
